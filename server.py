@@ -13,6 +13,8 @@ import pandas as pd
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI(title="Tata Digital Twin API")
 
@@ -242,7 +244,7 @@ async def websocket_endpoint(ws: WebSocket):
     except Exception:
         manager.disconnect(ws)
 
-@app.get("/")
+@app.get("/api/status")
 def root():
     return {
         "status": "running",
@@ -256,6 +258,22 @@ def predict(machine_id: str):
     if machine_id not in MACHINE_IDS:
         return {"error": "unknown machine"}
     return get_next_row(machine_id)
+
+# ─── SERVE FRONTEND (React / Vite) ─────────────────────────────────────────────
+dist_path = BASE / "dist"
+if dist_path.exists():
+    app.mount("/assets", StaticFiles(directory=dist_path / "assets"), name="assets")
+
+    @app.get("/{catchall:path}")
+    def serve_frontend(catchall: str):
+        file_path = dist_path / catchall
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(dist_path / "index.html")
+else:
+    @app.get("/")
+    def no_frontend():
+        return {"error": "Frontend not built. Run 'npm run build'."}
 
 
 # ─── WHAT-IF SIMULATION ENDPOINT ───────────────────────────────────────────────

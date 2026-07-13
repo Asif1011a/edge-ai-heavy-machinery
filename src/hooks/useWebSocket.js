@@ -2,8 +2,9 @@ import { useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import { MACHINES } from '../data/machines'
 
-// Backend WebSocket URL — real data server
-const WS_URL = 'ws://localhost:8000/ws'
+// Backend WebSocket URL — dynamically use current host or fallback to localhost
+const WS_PROTOCOL = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+const WS_URL = import.meta.env.VITE_WS_URL || `${WS_PROTOCOL}//${window.location.host}/ws`
 
 // ─── FALLBACK SIMULATION ───────────────────────────────────────────────────────
 // Used when the backend server is not running.
